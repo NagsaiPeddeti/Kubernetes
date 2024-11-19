@@ -86,3 +86,39 @@ kubectl describe ns medical
 
 As discussed early, namespaces are are logical grouping of resources. And we can put the limit on the resource utilization by creating resource quotes and limit ranges.
 
+
+### Resource Quota
+
+```sh
+kubectl create resourcequota medical --dry-run=client -o yaml > medical/rq.yaml
+```
+
+As shown in medical/rq.yaml file, one can define the quota for multiple resources inside the namespace like pod,service,storage,configmap and secrets.
+
+Lets create a Pod to test the same.
+
+## What is a Pod?
+Pod is the smallest deployable unit in the Kubernetes. It is equivalent to a VM. 
+Then what is container ?
+In simple terms, Kubernetes has created a wrapper class above the container and called it as a Pod. We can't deploy containers directly in Kubernetes. We can only deploy Pods which in turn run the containers inside it. 
+
+```sh
+kubectl run  pod nginx  --image=nginx --dry-run=client -o yaml > medical/pod.yaml
+kubectl apply -f medical/pod.yaml
+```
+When we have tried to create the pod, it resulted in the below error.
+
+`Error from server (Forbidden): error when creating "medical/pod.yaml": pods "pod" is forbidden: failed quota: full-quota: must specify limits.cpu for: pod; limits.memory for: pod; requests.cpu for: pod; requests.memory for: pod`
+
+This is because, as we have applied the quota restrictions to the namespace, it is mandatory to add the same in Pod specification while deploying. Create the medical/pod2.yaml file and add the resource requests and limits. Or  Hint: Use the LimitRanger admission controller to force defaults for pods that make no compute resource requirements.
+
+```sh
+kubectl apply -f medical/pod2.yaml
+```
+- This will create the pod.
+- Update the medical/rq.yaml file for pods value to 1 which means only one pod can be deployed under the namespace.
+- Apply the changes.
+- Create the new pod by changing the name in pod2.yaml. The following error will be thrown.
+`Error from server (Forbidden): error when creating "medical/pod2.yaml": pods "pod2" is forbidden: exceeded quota: full-quota, requested: pods=1, used: pods=1, limited: pods=1`
+
+Next topic ScopeSelector, LimitRanges

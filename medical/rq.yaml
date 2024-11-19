@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: full-quota
+  namespace: medical #namespace to which this quote needs to be applicable
+spec:
+  hard:
+    pods: "1" #maximum number of pods that can in this namespace
+    requests.cpu: "5" #total cpu that pods can request for
+    requests.memory: 10Gi # total memory pods can request for
+    limits.cpu: "10" # overall cpu limits
+    limits.memory: 20Gi # overall ram limit
+    persistentvolumeclaims: "10" 
+    requests.storage: 100Gi
+    configmaps: "10"
+    secrets: "20"
+    services: "10"
+    services.loadbalancers: "2"
+    #ingresses.extensions: "5"
