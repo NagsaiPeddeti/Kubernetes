@@ -1,0 +1,159 @@
+pods Practice commands:
+
+$ alias kubectl k 
+$ k get pods
+$ k run nginx --image=nginx --dry-run=client -o yaml > nginx.yaml
+$ k describe pod podid
+$ k delete pod podid
+
+relicasets practice commands
+
+$ alias kubectl k
+$ k get rs
+$ k describe rs rsid
+
+
+deployments 
+
+$ k get deploy
+
+
+Create a pod named busybox-pod using the busybox image that runs sleep 3600 as its command.
+
+kubectl run busybox-pod --image=busybox --restart=Never --command -- sleep 3600
+🔍 Explanation:
+--command: Tells kubectl that what follows are the actual command arguments.
+
+-- sleep 3600: The command you want the container to run.
+
+--restart=Never: Ensures it creates a Pod (not a Deployment — which is default).
+
+Without --restart=Never, it tries to create a Deployment by default.
+
+
+Generate the YAML for a Deployment named nginx-deploy with 3 replicas using the nginx:1.21 image, but do not create it — just save it to a file called nginx-deploy.yaml.
+
+📝 What kubectl command would you use?
+
+
+You said:
+kubectl create deploy nginx-deploy --image=nginx:1.21 --dry-run=client -o yaml > nginx-deploy.yaml
+
+✅ Question 3:
+Scale the Deployment nginx-deploy to 5 replicas using a kubectl command.
+
+📝 What command would you use?
+
+
+
+You said:
+kubectl scale deploy nginx-deploy --replicas=5
+
+
+Question 5:
+Delete a ReplicaSet named test-rs but keep the pods created by it running.
+
+📝 What command would you use?
+
+
+
+
+You said:
+i dont know, like we can delete use kubectl delete rs test-rs but i am pretty much sure it deletes the pods also.
+
+
+ChatGPT said:
+You're absolutely right to question that — by default, deleting a ReplicaSet does delete its Pods, since it manages them.
+
+But you can keep the pods by setting an option during deletion:
+
+✅ Correct Command:
+bash
+Copy
+Edit
+kubectl delete rs test-rs --cascade=orphan
+🧠 Explanation:
+--cascade=orphan: Orphans the dependent pods — i.e., removes their owner references, so they’re not deleted when the ReplicaSet is.
+
+This is a valid approach in CKA exams when testing your understanding of ownership and cascading deletions.
+
+Question 7:
+You applied a Deployment YAML, but the pods are stuck in ImagePullBackOff status. What could be the cause and how do you troubleshoot it?
+
+🧠 Explain possible reasons and how you’d investigate or fix this issue.
+
+
+
+You said:
+ImagePullBackOff error represents that the particluar image is not abled to be pulled by node to run the pod. there can be multiple reasons for this. one the image name is wrong. 2 the image is not present in the registry 3. the registry itself is down or inaccessible
+
+
+ChatGPT said:
+Exactly! You nailed the main causes:
+
+Wrong image name or tag (typo or non-existent tag).
+
+Image not found in the container registry.
+
+Registry is down or network issues prevent access.
+
+Also, sometimes authentication issues if it’s a private registry.
+
+How to troubleshoot:
+Use kubectl describe pod <pod-name> to see detailed error messages.
+
+Check events section for pull errors.
+
+Verify image name/tag in YAML.
+
+Confirm node can reach the registry (network connectivity).
+
+Check if image requires credentials and if imagePullSecrets are configured correctly.
+
+✅ Question 8:
+A Deployment is not updating pods after editing the image version in the YAML and reapplying it. What could be wrong?
+
+🧠 What might cause this, and how would you fix it?
+
+
+
+
+
+
+
+
+You said:
+the brute force  is deleting the deployment and creating a new one . but the problem with that is the application will go down for sure for couple of minutes. one case might be the yaml format is not correct , 
+
+
+ChatGPT said:
+Good thoughts! Here’s a more detailed explanation for Question 8:
+
+Why the Deployment might not update pods after YAML change:
+No change in spec.template:
+Kubernetes only triggers a rolling update if the spec.template (pod template) changes — for example, a new image version.
+If you changed something outside spec.template (like metadata labels), the pods won’t restart.
+
+You edited a file but did not apply the updated YAML correctly:
+Sometimes you might apply the old file by mistake.
+
+Imperative changes vs declarative:
+If you used kubectl apply, changes inside spec.template trigger rollout. If you used kubectl edit but didn’t save properly, no change occurs.
+
+How to fix:
+Ensure the image tag is updated inside spec.template.spec.containers.image in your YAML.
+
+Apply the YAML again: kubectl apply -f your-deployment.yaml.
+
+Verify rollout status: kubectl rollout status deployment/nginx-deploy.
+
+To force a restart without changing image, you can do:
+
+bash
+Copy
+Edit
+kubectl rollout restart deployment/nginx-deploy
+Deleting the deployment is indeed a brute force method but not recommended for production because of downtime.
+
+
+
