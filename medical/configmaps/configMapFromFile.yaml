@@ -1,0 +1,11 @@
+# configmap-example.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_COLOR: blue
+  APP_MODE: production
+  application.properties: |
+    server.port=8080
+    database.host=localhost
