@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    run: daemonset
+  name: node-monitor
+spec:
+  selector:
+    matchLabels:
+      name: daemonset
+  template:
+    metadata:
+      name: daemonset
+      labels:
+        name: daemonset
+    spec:
+      containers:
+      - image: busybox
+        command: ["/bin/sh", "-c", "echo 'Node monitoring is running.' && sleep 3600"]
+        name: daemonset
+        resources: {}
+

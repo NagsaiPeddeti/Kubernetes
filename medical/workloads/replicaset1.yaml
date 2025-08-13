@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-rs
+  labels:
+    type: apps
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+     name: nginx
+  template:
+    metadata:
+     labels:
+       name: nginx
+    spec:
+      containers:
+       - name: nginx
+         image: nginx:1.20 # changing this to nginx:1.20 from latest to see how update happens in replicaset
