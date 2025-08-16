@@ -1,0 +1,49 @@
+# A. The Ingress for the primary (A) version
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ab-test-primary
+  annotations:
+    # This annotation ensures all traffic goes here by default.
+    nginx.ingress.kubernetes.io/canary: "false"
+spec:
+  ingressClassName: "nginx"
+  rules:
+  - host: "abtest.mydomain.com"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: primary-app-service
+            port:
+              number: 80
+
+---
+
+# B. The Ingress for the new (B) version
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ab-test-canary
+  annotations:
+    # This annotation activates canary mode.
+    nginx.ingress.kubernetes.io/canary: "true"
+    # This annotation routes a user to this service if they have the header 'X-Test-Version' set to 'B'.
+    nginx.ingress.kubernetes.io/canary-by-header: "X-Test-Version"
+    # The value to match.
+    nginx.ingress.kubernetes.io/canary-by-header-value: "B"
+spec:
+  ingressClassName: "nginx"
+  rules:
+  - host: "abtest.mydomain.com"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: new-feature-app-service
+            port:
+              number: 80

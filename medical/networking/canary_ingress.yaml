@@ -1,0 +1,49 @@
+# A. The Ingress for the stable version (v1)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-app-stable
+  annotations:
+    # This annotation is key. It tells the controller to not apply a weight here.
+    # All traffic is implicitly routed to this service unless a weighted canary is active.
+    nginx.ingress.kubernetes.io/canary: "false"
+spec:
+  ingressClassName: "nginx"
+  rules:
+  - host: "canary.mydomain.com"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-service-v1
+            port:
+              number: 80
+
+---
+
+# B. The Ingress for the new canary version (v2)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-app-canary
+  annotations:
+    # This annotation activates canary mode for this Ingress.
+    nginx.ingress.kubernetes.io/canary: "true"
+    # This annotation sends 20% of the traffic to this new service.
+    # The remaining 80% goes to the stable service defined above.
+    nginx.ingress.kubernetes.io/canary-weight: "20"
+spec:
+  ingressClassName: "nginx"
+  rules:
+  - host: "canary.mydomain.com"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-service-v2
+            port:
+              number: 80
