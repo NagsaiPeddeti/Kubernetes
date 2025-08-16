@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blog-ingress
+  annotations:
+    # This is the key annotation.
+    # It tells the NGINX controller to rewrite the URL.
+    # The '$2' refers to the second capture group in the path regex.
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: "nginx"
+  rules:
+  - host: "web.mydomain.com"
+    http:
+      paths:
+      # This path matches everything starting with '/blog'.
+      # The regex `(.*)` captures the rest of the path after '/blog/'
+      - path: /blog/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: blog-app-service
+            port:
+              number: 80

@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: null
+  name: web-server-ingress
+#  annotations:
+#    kubernetes.io/ingress.class: "nginx". ### previous version type
+spec:
+  ingressClassName: nginx
+  # This is the new way to specify the ingress class
+  # The previous version used annotations
+  # to specify the ingress class.
+  rules:
+  - host: sample.example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+status:
+  loadBalancer: {}

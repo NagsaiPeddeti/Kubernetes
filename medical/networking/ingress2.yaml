@@ -1,0 +1,16 @@
+spec:
+  tls:
+  - hosts:
+    - web.mydomain.com
+    secretName: my-tls-secret # This must be the name of the Secret you created
+  rules:
+  - host: "web.mydomain.com"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-server-service
+            port:
+              number: 80
