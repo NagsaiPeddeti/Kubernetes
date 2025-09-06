@@ -1,0 +1,42 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+
+# Don't generate audit events for all requests in RequestReceived stage.
+omitStages:
+  - "RequestReceived"
+
+rules:
+  # 1. Log all write (create/update/patch/delete) requests with full request & response bodies.
+  - level: RequestResponse
+    verbs: ["create", "update", "patch", "delete", "deletecollection"]
+
+  # 2. Log all access to Secrets, ConfigMaps, and token-related resources with full details.
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["secrets", "configmaps", "serviceaccounts/token"]
+
+  # 3. Log all requests to pods/exec, pods/portforward, and pods/proxy (can be sensitive).
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["pods/exec", "pods/portforward", "pods/proxy"]
+
+  # 4. Log requests to the cluster-scoped resources at Metadata level.
+  - level: Metadata
+    resources:
+      - group: "rbac.authorization.k8s.io"
+      - group: "apiextensions.k8s.io"
+      - group: "admissionregistration.k8s.io"
+      - group: "apps"
+      - group: "batch"
+      - group: "networking.k8s.io"
+      - group: "policy"
+      - group: "storage.k8s.io"
+
+  # 5. Log all "get", "list", and "watch" requests only at Metadata level (less noisy).
+  - level: Metadata
+    verbs: ["get", "list", "watch"]
+
+  # 6. Default rule: log everything else at Request level.
+  - level: Request
