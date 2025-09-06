@@ -52,3 +52,15 @@ wget https://github.com/vmware-tanzu/velero/releases/latest/download/velero-v1.1
 tar -xvf velero-v1.16.2-linux-amd64.tar.gz
 sudo mv velero-v1.16.2-linux-amd64/velero /usr/local/bin/
 velero version
+
+
+velero install --provider gcp --plugins velero/velero-plugin-for-gcp:v1.0.0 --bucket mybucket --secret-file /etc/velero/credentials/velero-sa-key.json 
+
+
+velero install \
+  --provider gcp \
+  --plugins velero/velero-plugin-for-gcp:v1.10.0 \
+  --bucket k8s-etcd-backup \
+  --secret-file /etc/velero/credentials/velero-sa-key.json \
+  --backup-location-config region=us-east1 
+

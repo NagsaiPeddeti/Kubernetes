@@ -28,12 +28,18 @@ TIMESTAMP=$(date +%F)
 ETCD_SNAPSHOT_FILE="${ETCD_SNAPSHOT_DIR}/snapshot-${TIMESTAMP}.db"
 
 # -------------------------
-# 1️⃣ Etcd Snapshot
+# 1️⃣ Find ETCD Pod
+# -------------------------
+ETCD_POD=$(kubectl -n kube-system get pods -l component=etcd -o jsonpath='{.items[0].metadata.name}')
+if [[ -z "$ETCD_POD" ]]; then
+  echo "[$(date)] Error: No etcd pod found!"
+  exit 1
+fi
+
+# -------------------------
+# 2️⃣ Etcd Snapshot
 # -------------------------
 echo "[$(date)] Starting etcd snapshot..."
-
-ETCD_POD=$(kubectl -n kube-system get pods -l component=etcd -o jsonpath='{.items[0].metadata.name}')
-
 kubectl -n kube-system exec $ETCD_POD -- /usr/local/bin/etcdctl \
   --endpoints=$ETCD_ENDPOINTS \
   --cacert=$ETCD_CACERT \
@@ -41,25 +47,31 @@ kubectl -n kube-system exec $ETCD_POD -- /usr/local/bin/etcdctl \
   --key=$ETCD_KEY \
   snapshot save $ETCD_SNAPSHOT_FILE
 
-
 if [[ $? -ne 0 ]]; then
   echo "[$(date)] Etcd snapshot failed!"
   exit 1
 fi
 
 # -------------------------
-# 2️⃣ Upload etcd Snapshot to GCS
+# 3️⃣ Upload etcd Snapshot to GCS
 # -------------------------
 echo "[$(date)] Uploading etcd snapshot to GCS..."
-gsutil cp $ETCD_SNAPSHOT_FILE gs://${GCS_BUCKET}/etcd-snapshots/
+gsutil -o "Credentials:gs_service_key_file=$GOOGLE_APPLICATION_CREDENTIALS" \
+  cp $ETCD_SNAPSHOT_FILE gs://${GCS_BUCKET}/etcd-snapshots/
+
+if [[ $? -ne 0 ]]; then
+  echo "[$(date)] Upload to GCS failed!"
+  exit 1
+fi
 
 # -------------------------
-# 3️⃣ Velero Backup of Cluster Resources
+# 4️⃣ Velero Backup of Cluster Resources
 # -------------------------
+TTL_HOURS=$((RETENTION_DAYS * 24))
 echo "[$(date)] Starting Velero backup..."
 velero backup create cluster-backup-${TIMESTAMP} \
   --include-namespaces $VELERO_NAMESPACES \
-  --ttl ${RETENTION_DAYS}d
+  --ttl ${TTL_HOURS}h
 
 if [[ $? -ne 0 ]]; then
   echo "[$(date)] Velero backup failed!"
@@ -67,10 +79,10 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # -------------------------
-# 4️⃣ Cleanup Old Etcd Snapshots from GCS
+# 5️⃣ Cleanup Old Etcd Snapshots from GCS
 # -------------------------
 echo "[$(date)] Cleaning up old etcd snapshots..."
-gsutil ls gs://${GCS_BUCKET}/etcd-snapshots/ | \
+gsutil -o "Credentials:gs_service_key_file=$GOOGLE_APPLICATION_CREDENTIALS" ls gs://${GCS_BUCKET}/etcd-snapshots/ | \
   while read -r file; do
     # Extract date from filename: snapshot-YYYY-MM-DD.db
     file_date=$(basename $file | sed -E 's/snapshot-([0-9]{4}-[0-9]{2}-[0-9]{2})\.db/\1/')
@@ -78,7 +90,7 @@ gsutil ls gs://${GCS_BUCKET}/etcd-snapshots/ | \
     cutoff_ts=$(date -d "$RETENTION_DAYS days ago" +%s)
     if [[ $file_ts -lt $cutoff_ts ]]; then
       echo "Deleting old snapshot: $file"
-      gsutil rm $file
+      gsutil -o "Credentials:gs_service_key_file=$GOOGLE_APPLICATION_CREDENTIALS" rm $file
     fi
   done
 
